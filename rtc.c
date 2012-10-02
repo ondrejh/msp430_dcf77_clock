@@ -15,10 +15,12 @@
 // switch on (1) and off (0) debug blinking
 #define RTC_LED 1
 #if RTC_LED==1
+    // launchpad green led (P1.4 active high)
     #define RTC_LED_INIT() {P1DIR|=0x40;P1OUT&=~0x40;}
     #define RTC_LED_ON() {P1OUT|=0x40;}
     #define RTC_LED_OFF() {P1OUT&=~0x40;}
 #else
+    // no led
     #define RTC_LED_INIT() {}
     #define RTC_LED_ON() {}
     #define RTC_LED_OFF() {}
@@ -76,7 +78,7 @@ void rtc_set_time(tstruct *tset)
 void rtc_get_time(tstruct *tget)
 {
     uint8_t ptr = tptr;
-    memcpy(&tget,&tbuff[ptr],sizeof(tstruct));
+    memcpy(tget,&tbuff[ptr],sizeof(tstruct));
 }
 
 // init rtc timer (32kHz Xtal)

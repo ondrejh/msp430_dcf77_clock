@@ -17,6 +17,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+char h2c(unsigned int h); // hex to char
+int8_t c2h(char c); // char to hex
+
+
 void uart_init(void); // initialization
 int uart_putc(char c); // put char function
 int uart_puts(char *s); // put string function

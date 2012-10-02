@@ -55,6 +55,58 @@ void board_init(void)
 	LED_INIT(); // leds
 }
 
+// time output debug function
+void sprint_time(tstruct *t, char *tstr)
+{
+    uint8_t ptr = 0;
+    switch (t->dayow)
+    {
+        case 0:
+            tstr[ptr++]='P';
+            tstr[ptr++]='o';
+            break;
+        case 1:
+            tstr[ptr++]='U';
+            tstr[ptr++]='t';
+            break;
+        case 2:
+            tstr[ptr++]='S';
+            tstr[ptr++]='t';
+            break;
+        case 3:
+            tstr[ptr++]='C';
+            tstr[ptr++]='t';
+            break;
+        case 4:
+            tstr[ptr++]='P';
+            tstr[ptr++]='a';
+            break;
+        case 5:
+            tstr[ptr++]='S';
+            tstr[ptr++]='o';
+            break;
+        case 6:
+            tstr[ptr++]='N';
+            tstr[ptr++]='e';
+            break;
+        default:
+            tstr[ptr++]='-';
+            tstr[ptr++]='-';
+            break;
+    }
+    tstr[ptr++]=' ';
+    tstr[ptr++]=h2c(t->hour/10);
+    tstr[ptr++]=h2c(t->hour%10);
+    tstr[ptr++]=':';
+    tstr[ptr++]=h2c(t->minute/10);
+    tstr[ptr++]=h2c(t->minute%10);
+    tstr[ptr++]=':';
+    tstr[ptr++]=h2c(t->second/10);
+    tstr[ptr++]=h2c(t->second%10);
+    tstr[ptr++]='\r';
+    tstr[ptr++]='\n';
+    tstr[ptr++]='\0';
+}
 
 // main program body
 int main(void)
@@ -68,7 +120,11 @@ int main(void)
 	while(1)
 	{
         __bis_SR_register(CPUOFF + GIE); // enter sleep mode (leave on rtc second event)
-        //LED_GREEN_ON();
+        tstruct tnow;
+        rtc_get_time(&tnow);
+        char tstr[16];
+        sprint_time(&tnow,tstr);
+        uart_puts(tstr);
 	}
 
 	return -1;

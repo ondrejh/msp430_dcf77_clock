@@ -5,3 +5,4 @@
 *.d
 *.o
 dcf77clock.layout
+*.cbTemp
