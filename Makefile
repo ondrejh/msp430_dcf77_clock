@@ -13,7 +13,7 @@ MCU        = msp430g2553
 #MCU        = msp430g2452
 # List all the source files here
 # eg if you have a source file foo.c then list it here
-SOURCES = main.c
+SOURCES = main.c uart.c
 # Include are located in the Include directory
 INCLUDES = -IInclude
 # Add or subtract whatever MSPGCC flags you want. There are plenty more
