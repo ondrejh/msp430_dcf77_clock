@@ -28,6 +28,10 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="rtc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="rtc.h" />
 		<Unit filename="uart.c">
 			<Option compilerVar="CC" />
 		</Unit>
