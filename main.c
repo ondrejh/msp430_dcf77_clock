@@ -1,307 +1,131 @@
+//******************************************************************************
+// DCF77 home automation clock
 //
-// MSP430 LCD Code
+// author: Ondrej Hejda
+// date:   2.10.2012
 //
-#include "msp430x20x2.h"
+// resources:
+//
+//  Using ACLK and the 32kHz Crystal .. thanks to:
+//   "http://www.msp430launchpad.com/2012/03/using-aclk-and-32khz-crystal.html"
+//
+// hardware: MSP430G2553 (launchpad)
+//
+//                MSP4302553
+//             -----------------
+//         /|\|              XIN|----  -----------
+//          | |                 |     | 32.768kHz |---
+//          --|RST          XOUT|----  -----------    |
+//            |                 |                    ---
+//            |                 |
+//            |           P1.1,2|--> UART (debug output 9.6kBaud)
+//            |                 |
+//            |             P1.0|--> RED LED (active high)
+//            |             P1.6|--> GREEN LED (active high)
+//            |                 |
+//
+//******************************************************************************
 
-#define LCM_DIR P1DIR
-#define LCM_OUT P1OUT
+// include section
+#include <msp430g2553.h>
 
-//
-// Define symbolic LCM - MCU pin mappings
-// We've set DATA PIN TO 4,5,6,7 for easy translation
-//
-#define LCM_PIN_RS BIT0 // P1.0
-#define LCM_PIN_EN BIT1 // P1.1
-#define LCM_PIN_D7 BIT7 // P1.7
-#define LCM_PIN_D6 BIT6 // P1.6
-#define LCM_PIN_D5 BIT5 // P1.5
-#define LCM_PIN_D4 BIT4 // P1.4
+#include "uart.h"
+#include "rtc.h"
 
 
-#define LCM_PIN_MASK ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
+// board (leds, button)
+#define LED_INIT() {P1DIR|=0x41;P1OUT&=~0x41;}
+#define LED_RED_ON() {P1OUT|=0x01;}
+#define LED_RED_OFF() {P1OUT&=~0x01;}
+#define LED_RED_SWAP() {P1OUT^=0x01;}
+#define LED_GREEN_ON() {P1OUT|=0x40;}
+#define LED_GREEN_OFF() {P1OUT&=~0x40;}
+#define LED_GREEN_SWAP() {P1OUT^=0x40;}
 
-#define FALSE 0
-#define TRUE 1
 
-//
-// Routine Desc:
-//
-// This is the function that must be called
-// whenever the LCM needs to be told to
-// scan it's data bus.
-//
-// Parameters:
-//
-// void.
-//
-// Return
-//
-// void.
-//
-void PulseLcm()
+// leds and dco init
+void board_init(void)
 {
-    //
-    // pull EN bit low
-    //
-    LCM_OUT &= ~LCM_PIN_EN;
-    __delay_cycles(200);
+	// oscillator
+	BCSCTL1 = CALBC1_1MHZ;		// Set DCO
+	DCOCTL = CALDCO_1MHZ;
+	/*BCSCTL1 = CALBC1_16MHZ;		// Set DCO
+	DCOCTL = CALDCO_16MHZ;*/
 
-    //
-    // pull EN bit high
-    //
-    LCM_OUT |= LCM_PIN_EN;
-    __delay_cycles(200);
-
-    //
-    // pull EN bit low again
-    //
-    LCM_OUT &= (~LCM_PIN_EN);
-    __delay_cycles(200);
+	LED_INIT(); // leds
 }
 
-//
-// Routine Desc:
-//
-// Send a byte on the data bus in the 4 bit mode
-// This requires sending the data in two chunks.
-// The high nibble first and then the low nible
-//
-// Parameters:
-//
-// ByteToSend - the single byte to send
-//
-// IsData - set to TRUE if the byte is character data
-// FALSE if its a command
-//
-// Return
-//
-// void.
-//
-void SendByte(char ByteToSend, int IsData)
+// time output debug function
+void sprint_time(tstruct *t, char *tstr)
 {
-    //
-    // clear out all pins
-    //
-    LCM_OUT &= (~LCM_PIN_MASK);
-
-    //
-    // set High Nibble (HN) -
-    // usefulness of the identity mapping
-    // apparent here. We can set the
-    // DB7 - DB4 just by setting P1.7 - P1.4
-    // using a simple assignment
-    //
-    LCM_OUT |= (ByteToSend & 0xF0);
-
-    if (IsData == TRUE)
+    uint8_t ptr = 0;
+    switch (t->dayow)
     {
-        LCM_OUT |= LCM_PIN_RS;
+        case 0:
+            tstr[ptr++]='P';
+            tstr[ptr++]='o';
+            break;
+        case 1:
+            tstr[ptr++]='U';
+            tstr[ptr++]='t';
+            break;
+        case 2:
+            tstr[ptr++]='S';
+            tstr[ptr++]='t';
+            break;
+        case 3:
+            tstr[ptr++]='C';
+            tstr[ptr++]='t';
+            break;
+        case 4:
+            tstr[ptr++]='P';
+            tstr[ptr++]='a';
+            break;
+        case 5:
+            tstr[ptr++]='S';
+            tstr[ptr++]='o';
+            break;
+        case 6:
+            tstr[ptr++]='N';
+            tstr[ptr++]='e';
+            break;
+        default:
+            tstr[ptr++]='-';
+            tstr[ptr++]='-';
+            break;
     }
-    else
-    {
-        LCM_OUT &= ~LCM_PIN_RS;
-    }
-    //
-    // we've set up the input voltages to the LCM.
-    // Now tell it to read them.
-    //
-    PulseLcm();
-
-    //
-    // set Low Nibble (LN) -
-    // usefulness of the identity mapping
-    // apparent here. We can set the
-    // DB7 - DB4 just by setting P1.7 - P1.4
-    // using a simple assignment
-    //
-    LCM_OUT &= (~LCM_PIN_MASK);
-    LCM_OUT |= ((ByteToSend & 0x0F) << 4);
-
-    if (IsData == TRUE)
-    {
-        LCM_OUT |= LCM_PIN_RS;
-    }
-    else
-    {
-        LCM_OUT &= ~LCM_PIN_RS;
-    }
-
-    //
-    // we've set up the input voltages to the LCM.
-    // Now tell it to read them.
-    //
-    PulseLcm();
+    tstr[ptr++]=' ';
+    tstr[ptr++]=h2c(t->hour/10);
+    tstr[ptr++]=h2c(t->hour%10);
+    tstr[ptr++]=':';
+    tstr[ptr++]=h2c(t->minute/10);
+    tstr[ptr++]=h2c(t->minute%10);
+    tstr[ptr++]=':';
+    tstr[ptr++]=h2c(t->second/10);
+    tstr[ptr++]=h2c(t->second%10);
+    tstr[ptr++]='\r';
+    tstr[ptr++]='\n';
+    tstr[ptr++]='\0';
 }
 
-//
-// Routine Desc:
-//
-// Set the position of the cursor on the screen
-//
-// Parameters:
-//
-// Row - zero based row number
-//
-// Col - zero based col number
-//
-// Return
-//
-// void.
-//
-void LcmSetCursorPosition(char Row, char Col)
+// main program body
+int main(void)
 {
-    char address;
+	WDTCTL = WDTPW + WDTHOLD;	// Stop WDT
 
-    //
-    // construct address from (Row, Col) pair
-    //
+	board_init(); // init dco and leds
+	rtc_timer_init(); // init 32kHz timer
+	uart_init(); // init uart (communication)
 
-    if (Row == 0)
-    {
-        address = 0;
-    }
-    else
-    {
-        address = 0x40;
-    }
+	while(1)
+	{
+        __bis_SR_register(CPUOFF + GIE); // enter sleep mode (leave on rtc second event)
+        tstruct tnow;
+        rtc_get_time(&tnow);
+        char tstr[16];
+        sprint_time(&tnow,tstr);
+        uart_puts(tstr);
+	}
 
-    address |= Col;
-    SendByte(0x80 | address, FALSE);
-}
-
-//
-// Routine Desc:
-//
-// Clear the screen data and return the
-// cursor to home position
-//
-// Parameters:
-//
-// void.
-//
-// Return
-//
-// void.
-//
-void ClearLcmScreen()
-{
-    //
-    // Clear display, return home
-    //
-    SendByte(0x01, FALSE);
-    SendByte(0x02, FALSE);
-}
-
-//
-// Routine Desc:
-//
-// Initialize the LCM after power-up.
-//
-// Note: This routine must not be called twice on the
-// LCM. This is not so uncommon when the power
-// for the MCU and LCM are separate.
-//
-// Parameters:
-//
-// void.
-//
-// Return
-//
-// void.
-//
-void InitializeLcm(void)
-{
-    //
-    // set the MSP pin configurations
-    // and bring them to low
-    //
-    LCM_DIR |= LCM_PIN_MASK;
-    LCM_OUT &= ~(LCM_PIN_MASK);
-    //
-    // wait for the LCM to warm up and reach
-    // active regions. Remember MSPs can power
-    // up much faster than the LCM.
-    //
-    __delay_cycles(100000);
-
-    //
-    // initialize the LCM module
-    //
-    // 1. Set 4-bit input
-    //
-    LCM_OUT &= ~LCM_PIN_RS;
-    LCM_OUT &= ~LCM_PIN_EN;
-
-    LCM_OUT = 0x20;
-    PulseLcm();
-
-    //
-    // set 4-bit input - second time.
-    // (as reqd by the spec.)
-    //
-    SendByte(0x28, FALSE);
-
-    //
-    // 2. Display on, cursor on, blink cursor
-    //
-    SendByte(0x0E, FALSE);
-
-    //
-    // 3. Cursor move auto-increment
-    //
-    SendByte(0x06, FALSE);
-}
-
-//
-// Routine Desc
-//
-// Print a string of characters to the screen
-//
-// Parameters:
-//
-// Text - null terminated string of chars
-//
-// Returns
-//
-// void.
-//
-void PrintStr(char *Text)
-{
-    char *c;
-    c = Text;
-
-    while ((c != 0) && (*c != 0))
-    {
-        SendByte(*c, TRUE);
-        c++;
-    }
-}
-
-//
-// Routine Desc
-//
-// main entry point to the sketch
-//
-// Parameters
-//
-// void.
-//
-// Returns
-//
-// void.
-//
-void main(void)
-{
-    WDTCTL = WDTPW + WDTHOLD; // Stop watchdog timer
-
-    InitializeLcm();
-
-    ClearLcmScreen();
-
-    PrintStr("Hello World!");
-
-    while (1)
-    {
-        __delay_cycles(1000);
-    }
+	return -1;
 }
