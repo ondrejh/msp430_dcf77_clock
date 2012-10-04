@@ -10,5 +10,8 @@ Done:
 Todo:
 
     - connect DCF77 receiver and decode it
-    - add some LCD and buttons
+    - add some LCD and buttons (lcd branch)
+        - change pinout
+        - relocate to module
+        - embedd in master
     - add some outputs
