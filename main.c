@@ -8,6 +8,9 @@
 //
 //  Using ACLK and the 32kHz Crystal .. thanks to:
 //   "http://www.msp430launchpad.com/2012/03/using-aclk-and-32khz-crystal.html"
+//  Interface MSP430 Launchpad with LCD Module (LCM) in 4 bit mode .. thanks to:
+//   "http://cacheattack.blogspot.cz/2011/06/quick-overview-on-interfacing-msp430.html"
+//
 //
 // hardware: MSP430G2553 (launchpad)
 //
@@ -23,6 +26,14 @@
 //            |             P1.0|--> RED LED (active high)
 //            |             P1.6|--> GREEN LED (active high)
 //            |                 |
+//            |                 |      -----------    +5V
+//            |            P2.0 |---->| D4 |       |   |
+//            |            P2.1 |---->| D5 |       |---
+//            |            P2.2 |---->| D6 |  LCD  |
+//            |            P2.3 |---->| D7 |  16x2 |
+//            |            P2.4 |---->| EN |       |---
+//            |            P2.5 |---->| RS |       |   |
+//            |                 |      ------------   ---
 //
 //******************************************************************************
 
@@ -131,7 +142,9 @@ int main(void)
 	rtc_timer_init(); // init 32kHz timer
 	uart_init(); // init uart (communication)
 
-    //lcm_clearscr();
+    lcm_clearscr();
+    lcm_goto(0,0);
+    lcm_prints("Hello World!");
 
 	while(1)
 	{
@@ -140,7 +153,7 @@ int main(void)
         rtc_get_time(&tnow);
         char tstr[16];
         sprint_time(&tnow,tstr);
-        lcm_goto(0,0);
+        lcm_goto(1,3);
         lcm_prints(tstr);
         str_add_lineend(tstr,16);
         uart_puts(tstr);
