@@ -37,8 +37,10 @@
 
 #define LCM_PIN_MASK ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
 
-#define FALSE 0
-#define TRUE 1
+/*#define FALSE 0
+#define TRUE 1*/
+#define LCM_SEND_COMMAND 0
+#define LCM_SEND_DATA 1
 
 #define LCM_PULSE_DELAY 200
 #define LCM_INIT_DELAY 100000
@@ -117,7 +119,7 @@ void SendByte(char ByteToSend, int IsData)
     //LCM_OUT |= (ByteToSend & 0xF0);
     LCM_OUT |= ((ByteToSend & 0xF0) >> 4);
 
-    if (IsData == TRUE)
+    if (IsData != 0)
     {
         LCM_OUT |= LCM_PIN_RS;
     }
@@ -143,7 +145,7 @@ void SendByte(char ByteToSend, int IsData)
     //LCM_OUT |= ((ByteToSend & 0x0F) << 4);
     LCM_OUT |= (ByteToSend & 0x0F);
 
-    if (IsData == TRUE)
+    if (IsData != 0)
     {
         LCM_OUT |= LCM_PIN_RS;
     }
@@ -194,7 +196,7 @@ void lcm_goto(char Row, char Col)
     }
 
     address |= Col;
-    SendByte(0x80 | address, FALSE);
+    SendByte(0x80 | address, LCM_SEND_COMMAND);
 }
 
 //
@@ -216,8 +218,8 @@ void lcm_clearscr()
     //
     // Clear display, return home
     //
-    SendByte(0x01, FALSE);
-    SendByte(0x02, FALSE);
+    SendByte(0x01, LCM_SEND_COMMAND);
+    SendByte(0x02, LCM_SEND_COMMAND);
 }
 
 //
@@ -267,17 +269,17 @@ void lcm_init(void)
     // set 4-bit input - second time.
     // (as reqd by the spec.)
     //
-    SendByte(0x28, FALSE);
+    SendByte(0x28, LCM_SEND_COMMAND);
 
     //
     // 2. Display on, cursor on, blink cursor
     //
-    SendByte(0x0E, FALSE);
+    SendByte(0x0E, LCM_SEND_COMMAND);
 
     //
     // 3. Cursor move auto-increment
     //
-    SendByte(0x06, FALSE);
+    SendByte(0x06, LCM_SEND_COMMAND);
 }
 
 //
@@ -300,7 +302,7 @@ void lcm_prints(char *Text)
 
     while ((c != 0) && (*c != 0))
     {
-        SendByte(*c, TRUE);
+        SendByte(*c, LCM_SEND_DATA);
         c++;
     }
 }
