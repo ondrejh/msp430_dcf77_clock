@@ -6,19 +6,27 @@
 //
 #include "msp430x20x2.h"
 
-#define LCM_DIR P1DIR
-#define LCM_OUT P1OUT
+/*#define LCM_DIR P1DIR
+#define LCM_OUT P1OUT*/
+#define LCM_DIR P2DIR
+#define LCM_OUT P2OUT
 
 //
 // Define symbolic LCM - MCU pin mappings
-// We've set DATA PIN TO 4,5,6,7 for easy translation
+// We've set DATA PIN TO (4,5,6,7) 0,1,2,3 for easy translation
 //
-#define LCM_PIN_RS BIT0 // P1.0
+/*#define LCM_PIN_RS BIT0 // P1.0
 #define LCM_PIN_EN BIT1 // P1.1
 #define LCM_PIN_D7 BIT7 // P1.7
 #define LCM_PIN_D6 BIT6 // P1.6
 #define LCM_PIN_D5 BIT5 // P1.5
-#define LCM_PIN_D4 BIT4 // P1.4
+#define LCM_PIN_D4 BIT4 // P1.4*/
+#define LCM_PIN_RS BIT5 // P2.5
+#define LCM_PIN_EN BIT4 // P2.4
+#define LCM_PIN_D7 BIT3 // P2.3
+#define LCM_PIN_D6 BIT2 // P2.2
+#define LCM_PIN_D5 BIT1 // P2.1
+#define LCM_PIN_D4 BIT0 // P2.0
 
 
 #define LCM_PIN_MASK ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
@@ -27,7 +35,7 @@
 #define TRUE 1
 
 #define LCM_PULSE_DELAY 200
-#define LCM_INIT_DELAY 1000
+#define LCM_INIT_DELAY 100000
 
 //
 // Routine Desc:
@@ -94,10 +102,12 @@ void SendByte(char ByteToSend, int IsData)
     // set High Nibble (HN) -
     // usefulness of the identity mapping
     // apparent here. We can set the
-    // DB7 - DB4 just by setting P1.7 - P1.4
+    // // DB7 - DB4 just by setting P1.7 - P1.4
+    // DB7 - DB4 just by setting P2.3 - P2.0
     // using a simple assignment
     //
-    LCM_OUT |= (ByteToSend & 0xF0);
+    //LCM_OUT |= (ByteToSend & 0xF0);
+    LCM_OUT |= ((ByteToSend & 0xF0) >> 4);
 
     if (IsData == TRUE)
     {
@@ -117,11 +127,13 @@ void SendByte(char ByteToSend, int IsData)
     // set Low Nibble (LN) -
     // usefulness of the identity mapping
     // apparent here. We can set the
-    // DB7 - DB4 just by setting P1.7 - P1.4
+    // // DB7 - DB4 just by setting P1.7 - P1.4
+    // DB7 - DB4 just by setting P2.3 - P2.0
     // using a simple assignment
     //
     LCM_OUT &= (~LCM_PIN_MASK);
-    LCM_OUT |= ((ByteToSend & 0x0F) << 4);
+    //LCM_OUT |= ((ByteToSend & 0x0F) << 4);
+    LCM_OUT |= (ByteToSend & 0x0F);
 
     if (IsData == TRUE)
     {
