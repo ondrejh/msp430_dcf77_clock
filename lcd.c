@@ -8,7 +8,7 @@
  */
 
 /// include section
-#include "msp430x20x2.h" // mcu register addressing
+#include <msp430g2553.h>
 #include "lcd.h" // self
 
 /// defines
@@ -44,6 +44,9 @@
 
 #define LCM_PULSE_DELAY 200
 #define LCM_INIT_DELAY 100000
+
+#define LCM_CURSOR_ON 0x02
+#define LCM_CURSOR_BLINK 0x01
 
 /// local function implementations
 
@@ -262,7 +265,8 @@ void lcm_init(void)
     LCM_OUT &= ~LCM_PIN_RS;
     LCM_OUT &= ~LCM_PIN_EN;
 
-    LCM_OUT = 0x20;
+    //LCM_OUT = 0x20;
+    LCM_OUT = LCM_PIN_D5;
     PulseLcm();
 
     //
@@ -272,18 +276,14 @@ void lcm_init(void)
     SendByte(0x28, LCM_SEND_COMMAND);
 
     //
-    // 2. Display on, cursor on, blink cursor
+    // 2. Display on, cursor off, blink off
     //
-    SendByte(0x0E, LCM_SEND_COMMAND);
+    SendByte(0x0C/*|LCM_CURSOR_ON|LCM_CURSOR_BLINK*/, LCM_SEND_COMMAND);
 
     //
     // 3. Cursor move auto-increment
     //
     SendByte(0x06, LCM_SEND_COMMAND);
-
-    __delay_cycles(LCM_INIT_DELAY);
-    lcm_clearscr();
-    lcm_clearscr();
 }
 
 //
