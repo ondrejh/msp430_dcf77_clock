@@ -26,6 +26,9 @@
 #define FALSE 0
 #define TRUE 1
 
+#define LCM_PULSE_DELAY 200
+#define LCM_INIT_DELAY 1000
+
 //
 // Routine Desc:
 //
@@ -47,19 +50,19 @@ void PulseLcm()
     // pull EN bit low
     //
     LCM_OUT &= ~LCM_PIN_EN;
-    __delay_cycles(200);
+    __delay_cycles(LCM_PULSE_DELAY);
 
     //
     // pull EN bit high
     //
     LCM_OUT |= LCM_PIN_EN;
-    __delay_cycles(200);
+    __delay_cycles(LCM_PULSE_DELAY);
 
     //
     // pull EN bit low again
     //
     LCM_OUT &= (~LCM_PIN_EN);
-    __delay_cycles(200);
+    __delay_cycles(LCM_PULSE_DELAY);
 }
 
 //
@@ -225,7 +228,7 @@ void InitializeLcm(void)
     // active regions. Remember MSPs can power
     // up much faster than the LCM.
     //
-    __delay_cycles(100000);
+    __delay_cycles(LCM_INIT_DELAY);
 
     //
     // initialize the LCM module
