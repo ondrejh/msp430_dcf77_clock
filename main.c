@@ -1,6 +1,9 @@
 //
 // MSP430 LCD Code
 //
+// Interface MSP430 Launchpad with LCD Module (LCM) in 4 bit mode. Thanks to:
+//  http://cacheattack.blogspot.cz/2011/06/quick-overview-on-interfacing-msp430.html
+//
 #include "msp430x20x2.h"
 
 #define LCM_DIR P1DIR
