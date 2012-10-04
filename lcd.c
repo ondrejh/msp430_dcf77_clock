@@ -119,7 +119,7 @@ void SendByte(char ByteToSend, int IsData)
     //LCM_OUT |= (ByteToSend & 0xF0);
     LCM_OUT |= ((ByteToSend & 0xF0) >> 4);
 
-    if (IsData != 0)
+    if (IsData != LCM_SEND_COMMAND)
     {
         LCM_OUT |= LCM_PIN_RS;
     }
@@ -145,7 +145,7 @@ void SendByte(char ByteToSend, int IsData)
     //LCM_OUT |= ((ByteToSend & 0x0F) << 4);
     LCM_OUT |= (ByteToSend & 0x0F);
 
-    if (IsData != 0)
+    if (IsData != LCM_SEND_COMMAND)
     {
         LCM_OUT |= LCM_PIN_RS;
     }
@@ -280,6 +280,10 @@ void lcm_init(void)
     // 3. Cursor move auto-increment
     //
     SendByte(0x06, LCM_SEND_COMMAND);
+
+    __delay_cycles(LCM_INIT_DELAY);
+    lcm_clearscr();
+    lcm_clearscr();
 }
 
 //
