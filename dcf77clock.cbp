@@ -25,6 +25,10 @@
 		</Compiler>
 		<Unit filename="Makefile" />
 		<Unit filename="README.md" />
+		<Unit filename="button.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="button.h" />
 		<Unit filename="lcd.c">
 			<Option compilerVar="CC" />
 		</Unit>
