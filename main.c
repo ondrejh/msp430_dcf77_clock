@@ -10,6 +10,7 @@
 //   "http://www.msp430launchpad.com/2012/03/using-aclk-and-32khz-crystal.html"
 //  Interface MSP430 Launchpad with LCD Module (LCM) in 4 bit mode .. thanks to:
 //   "http://cacheattack.blogspot.cz/2011/06/quick-overview-on-interfacing-msp430.html"
+//  Buttons: MSP430G2xx3 Demo - Software Port Interrupt Service on P1.4 from LPM4
 //
 //
 // hardware: MSP430G2553 (launchpad)
@@ -25,6 +26,11 @@
 //            |                 |
 //            |             P1.0|--> RED LED (active high)
 //            |             P1.6|--> GREEN LED (active high)
+//            |                 |
+//            |             P1.3|----> BTN1 --
+//            |             P1.4|----> BTN2 --|--
+//            |             P1.5|----> BTN3 --   |
+//            |                 |               ---
 //            |                 |
 //            |                 |      -----------    +5V
 //            |            P2.0 |---->| D4 |       |   |
