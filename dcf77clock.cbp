@@ -29,6 +29,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="button.h" />
+		<Unit filename="dcf77.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="dcf77.h" />
 		<Unit filename="lcd.c">
 			<Option compilerVar="CC" />
 		</Unit>
