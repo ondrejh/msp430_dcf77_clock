@@ -50,6 +50,7 @@
 #include "rtc.h"
 #include "lcd.h"
 #include "button.h"
+#include "dcf77.h"
 
 
 // board (leds, button)
@@ -149,6 +150,7 @@ int main(void)
 	rtc_timer_init(); // init 32kHz timer
 	uart_init(); // init uart (communication)
 	buttons_init(); // buttons
+	dcf77_init(); // dcf77 receiver
 
     lcm_clearscr();
     lcm_goto(0,0);

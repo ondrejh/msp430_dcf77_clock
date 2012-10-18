@@ -17,7 +17,7 @@
 #include "uart.h"
 
 // uart TX led
-#define UART_TX_LED 1
+#define UART_TX_LED 0
 #if UART_TX_LED==1
 	// TX led port 1 pin 0, active high
 	#define UART_TX_LED_INIT() {P1DIR|=0x01;UART_TX_LED_OFF();}
