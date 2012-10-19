@@ -18,6 +18,7 @@
 
 /// include section
 #include <msp430g2553.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include "dcf77.h" // self
 
@@ -80,6 +81,44 @@ int find_biggest(int val0, int val1, int val2, int *val)
     if (val2>theMost) {theMost=val2;i=2;};
     *val = theMost;
     return i;
+}
+
+// function decode dcf data
+void dcf77_decode(uint16_t *data,uint16_t *valid)
+{
+
+}
+
+// function memorize one minute symbols
+void dcf77_symbol_memory(dcf77_symbol_type symbol)
+{
+    static uint16_t data[4];
+    static uint16_t valid[4];
+    static int cnt = 0, dcnt = 0;
+    static uint16_t mask = 1;
+
+    // save symbol
+    if (symbol==DCF77_SYMBOL_1) data[dcnt]|=mask;
+    if (symbol==DCF77_SYMBOL_NONE) valid[dcnt]|=mask;
+
+    // increase counter & mask
+    mask<<=1;
+    if (mask==0) {dcnt++;mask=1;};
+    cnt++;
+
+    // test if symbol counter == 60 and symbol != "0" or "1"
+    if ((cnt==60)&&((symbol==DCF77_SYMBOL_MINUTE)||(symbol==DCF77_SYMBOL_NONE)))
+    {
+        // try to decode
+        dcf77_decode(data,valid);
+    }
+
+    // if minute symbol or counter == 60 => reset counter
+    if ((cnt==60)||(symbol==DCF77_SYMBOL_MINUTE))
+    {
+        // reset counter
+        cnt=0; mask=1; dcnt=0;
+    }
 }
 
 // reset dcf detector context
