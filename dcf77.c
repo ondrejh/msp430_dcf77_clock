@@ -71,6 +71,7 @@ typedef struct {
 } dcf77_detector_context;
 
 // function finding index and value of the biggest value from three values
+// it is used in symbol matching (dcf77_detect) and fine synchronization (dcf77_strobe)
 int find_biggest(int val0, int val1, int val2, int *val)
 {
     int i=0;
@@ -137,13 +138,17 @@ void dcf77_detect(dcf77_detector_context *detector, bool signal)
         // save overall signal quality value (symbol and pause)
         detector->sigQ = detector->sigQcnt+symQ;
         // decode symbol
-        switch (symI)
+        if (detector->sigQ>=DCF77_MIN_SIGNAL_QUALITY)
+            detector->sym=symI+1;
+        else
+            detector->sym=DCF77_SYMBOL_NONE;
+        /*switch (symI)
         {
             case 0: detector->sym=DCF77_SYMBOL_0; break;
             case 1: detector->sym=DCF77_SYMBOL_1; break;
             case 2: detector->sym=DCF77_SYMBOL_MINUTE; break;
             default: detector->sym=DCF77_SYMBOL_NONE; break;
-        }
+        }*/
         // rise it's ready flag
         detector->ready=true;
     }
@@ -169,7 +174,7 @@ void dcf77_strobe(void)
     {
         if (detector[0].ready==true)
         {
-            if ((detector[0].sym!=DCF77_SYMBOL_MINUTE)&&(detector[0].sigQ>=DCF77_MIN_SIGNAL_QUALITY))
+            if ((detector[0].sym!=DCF77_SYMBOL_MINUTE)&&(detector[0].sym!=DCF77_SYMBOL_NONE))
             {
                 dcf77_sync_mode=DCF77SYNC_FINE;
                 DCF77_LED_ON();
@@ -197,7 +202,7 @@ void dcf77_strobe(void)
     {
         if (detector[1].ready==true)
         {
-            if (detector[1].sigQ<DCF77_MIN_SIGNAL_QUALITY)
+            if (detector[1].sym==DCF77_SYMBOL_NONE)
             {
                 dcf77_sync_mode=DCF77SYNC_HOLD;
                 hold_counter=0;
@@ -238,7 +243,7 @@ void dcf77_strobe(void)
         if (detector[1].ready==true)
         {
             DCF77_LED_SWAP();
-            if (detector[1].sigQ>=DCF77_MIN_SIGNAL_QUALITY)
+            if (detector[1].sigQ!=DCF77_SYMBOL_NONE)
             {
                 if (detector[1].sym!=DCF77_SYMBOL_MINUTE)
                 {
