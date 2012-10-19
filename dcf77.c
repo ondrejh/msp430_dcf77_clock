@@ -50,7 +50,9 @@
 #define DCF77_FINESYNC_OFFSET 10
 // minimul quality of signal (out of 1000)
 #define DCF77_MIN_SIGNAL_QUALITY 800
-#define DCF77_MAX_HOLD_SYMBOLS 30
+// hold over and fine synchronization timing
+#define DCF77_MAX_HOLD_SYMBOLS 300
+#define DCF77_FINETUNE_SYMCOUNT 60
 
 // dcf strobe variables
 typedef enum {DCF77SYNC_COARSE,DCF77SYNC_FINE,DCF77SYNC_HOLD} dcf77_sync_mode_type;
@@ -94,7 +96,8 @@ void dcf77_reset_context(dcf77_detector_context *detector,int offset)
 void dcf77_detect(dcf77_detector_context *detector, bool signal)
 {
     // if cnt full, reset context
-    if (detector->cnt>=DCF77_DETECT_PERIOD) dcf77_reset_context(detector,0);
+    if (detector->cnt>=DCF77_DETECT_PERIOD)
+        dcf77_reset_context(detector,detector->cnt-DCF77_DETECT_PERIOD);
 
     // test symbols
     if (detector->cnt<DCF77_S0_PERIOD) // logic 0 (<100ms)
@@ -156,6 +159,8 @@ void dcf77_strobe(void)
     bool dcf77sig = DCF77_INPUT();
     int i;
 
+    static int FineTune = 0;
+
     static int hold_counter = 0;
 
 
@@ -198,6 +203,33 @@ void dcf77_strobe(void)
                 hold_counter=0;
             }
         }
+        if (detector[2].ready==true)
+        {
+            int Q,b;
+            b=find_biggest(detector[0].sigQ,detector[1].sigQ,detector[2].sigQ,&Q);
+            if (b==0)
+            {
+                FineTune--;
+                if (FineTune<-DCF77_FINETUNE_SYMCOUNT)
+                {
+                    FineTune=0;
+                    detector[0].cnt++;
+                    detector[1].cnt++;
+                    detector[2].cnt++;
+                }
+            }
+            if (b==2)
+            {
+                FineTune++;
+                if (FineTune>DCF77_FINETUNE_SYMCOUNT)
+                {
+                    FineTune=0;
+                    detector[0].cnt--;
+                    detector[1].cnt--;
+                    detector[2].cnt--;
+                }
+            }
+        }
     }
 
     // hold over
@@ -237,7 +269,6 @@ void dcf77_init(void)
     // input init
     DCF77_INPUT_INIT();
     DCF77_LED_INIT(); // debug led (en/dis by DCF77_LED macro value)
-    //DCF77_LED_ON();
 
     // timer init
 	TA1CCTL0 = CCIE;				// CCR0 interrupt enabled
@@ -252,6 +283,4 @@ __interrupt void Timer1 (void)
     TA1CCR0 += DCF77_STROBE_TIMER_INTERVAL;	// Add Offset to CCR0
 
     dcf77_strobe();
-    //if (DCF77_INPUT()) {DCF77_LED_ON();}
-    //else DCF77_LED_OFF();
 }
