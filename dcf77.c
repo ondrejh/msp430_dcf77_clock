@@ -20,6 +20,7 @@
 #include <msp430g2553.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <string.h>
 #include "dcf77.h" // self
 
 // input init (pull up resistor)
@@ -83,10 +84,56 @@ int find_biggest(int val0, int val1, int val2, int *val)
     return i;
 }
 
+// function decoding dcf77 bcd to binary
+uint8_t bcd2bin(uint8_t bcd)
+{
+    return ((bcd&0x0F)+(10*(bcd>>4)));
+}
+
+// function counting short dcf77 parity
+uint8_t getparity(uint8_t dat)
+{
+    uint8_t p=0,d=dat;
+    while (d!=0)
+    {
+        p^=d;
+        d>>1;
+    }
+    return p&0x01;
+}
+
 // function decode dcf data
 void dcf77_decode(uint16_t *data,uint16_t *valid)
 {
+    int i;
+    int minute,hour,day;
 
+    // (first time) decode only when all data valid
+    for (i=0;i<4;i++) if (valid[i]!=0) return;
+
+    // test M = 0 (bit 0)
+    if ((data[0]&0x0001)!=0) return;
+    // test S = 1 (bit 20)
+    if ((data[1]&0x0010)!=1) return;
+
+    // minute (bit 21 .. 27) / bit 28 parity
+    minute = (data[1]>>5)&0x007F;
+    if (((data[1]&0x1000)?1:0)!=getparity(minute)) return;
+    minute = bcd2bin(minute);
+    if (minute>59) return;
+
+    // hour (bit 29 .. 34) / bit 35 parity
+    hour = (data[1]>>13)|((data[2]&0x0007)<<3);
+    if (((data[2]&0x0008)?1:0)!=getparity(hour)) return;
+    hour = bcd2bin(hour);
+    if (hour>23) return;
+
+    // day of week (bit 42 .. 44)
+    day = (data[2]>>10)&0x07;
+    day = bcd2bin(day);
+    if (day==0) return;
+
+    // use decoded value here
 }
 
 // function memorize one minute symbols
@@ -118,6 +165,9 @@ void dcf77_symbol_memory(dcf77_symbol_type symbol)
     {
         // reset counter
         cnt=0; mask=1; dcnt=0;
+        // clear data and valid buffer
+        memset(data,0,4*sizeof(uint16_t));
+        memset(valid,0,4*sizeof(uint16_t));
     }
 }
 
