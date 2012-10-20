@@ -73,6 +73,8 @@ typedef struct {
     int s0cnt,s1cnt,sMcnt; // symbol counters (very internal)
 } dcf77_detector_context;
 
+dcf77_symbol_type last_last_symbol = DCF77_SYMBOL_NONE;
+
 // function finding index and value of the biggest value from three values
 // it is used in symbol matching (dcf77_detect) and fine synchronization (dcf77_strobe)
 int find_biggest(int val0, int val1, int val2, int *val)
@@ -111,7 +113,15 @@ void dcf77_decode(uint16_t *data,uint16_t *valid)
     uint8_t bcd;
 
     // (first time) decode only when all data valid
-    for (i=0;i<4;i++) if (valid[i]!=0) return;
+    for (i=0;i<4;i++) if (valid[i]!=0)
+    {
+        dcf77_time.second=56;
+        dcf77_time.minute=34;
+        dcf77_time.hour=12;
+        dcf77_time.dayow=6;
+        rtc_set_time(&dcf77_time);
+        return;
+    }
 
     // test M = 0 (bit 0)
     //if ((data[0]&0x0001)!=0) return;
@@ -243,6 +253,10 @@ void dcf77_detect(dcf77_detector_context *detector, bool signal)
             case 2: detector->sym=DCF77_SYMBOL_MINUTE; break;
             default: detector->sym=DCF77_SYMBOL_NONE; break;
         }*/
+
+        // debug output on lcd
+        last_symbol = detector->sym;
+
         // rise it's ready flag
         detector->ready=true;
     }
@@ -382,4 +396,10 @@ __interrupt void Timer1 (void)
     TA1CCR0 += DCF77_STROBE_TIMER_INTERVAL;	// Add Offset to CCR0
 
     dcf77_strobe();
+
+    if (last_symbol!=last_last_symbol)
+    {
+        last_last_symbol = last_symbol;
+        __bic_SR_register_on_exit(CPUOFF); // Clear CPUOFF bit from 0(SR)
+    }
 }

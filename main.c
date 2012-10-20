@@ -154,7 +154,7 @@ int main(void)
 
     lcm_clearscr();
     lcm_goto(0,0);
-    lcm_prints("Button: ");
+    lcm_prints("B  DCF");
 
 	while(1)
 	{
@@ -170,7 +170,7 @@ int main(void)
         uint8_t b=get_button();
         if (b)
         {
-            lcm_goto(0,8);
+            lcm_goto(0,3);
             tstr[0]='0'+b;
             tstr[1]='\0';
             lcm_prints(tstr);
@@ -183,6 +183,10 @@ int main(void)
                 rtc_set_time(&tnow);
             }
         }
+        lcm_goto(0,6);
+        tstr[0]='0'+last_symbol;
+        tstr[1]='\0';
+        lcm_prints(tstr);
 	}
 
 	return -1;
