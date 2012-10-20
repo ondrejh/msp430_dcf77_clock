@@ -71,7 +71,7 @@ void rtc_set_time(tstruct *tset)
     // reset timer (next time tick)
     treset = true;
     // set time
-    memcpy(&tbuff[tptr],&tset,sizeof(tstruct));
+    memcpy(&tbuff[tptr],tset,sizeof(tstruct));
 }
 
 // get time function

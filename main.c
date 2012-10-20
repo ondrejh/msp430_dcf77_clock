@@ -174,6 +174,14 @@ int main(void)
             tstr[0]='0'+b;
             tstr[1]='\0';
             lcm_prints(tstr);
+            if (b==3) // test rtc set function
+            {
+                tnow.second = 0;
+                tnow.minute = 33;
+                tnow.hour = 22;
+                tnow.dayow = 2;
+                rtc_set_time(&tnow);
+            }
         }
 	}
 
