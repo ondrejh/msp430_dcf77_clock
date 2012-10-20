@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
+#include "rtc.h"
 #include "dcf77.h" // self
 
 // input init (pull up resistor)
@@ -106,34 +107,38 @@ uint8_t getparity(uint8_t dat)
 void dcf77_decode(uint16_t *data,uint16_t *valid)
 {
     int i;
-    int minute,hour,day;
+    tstruct dcf77_time;
+    uint8_t bcd;
 
     // (first time) decode only when all data valid
     for (i=0;i<4;i++) if (valid[i]!=0) return;
 
     // test M = 0 (bit 0)
-    if ((data[0]&0x0001)!=0) return;
+    //if ((data[0]&0x0001)!=0) return;
     // test S = 1 (bit 20)
-    if ((data[1]&0x0010)!=1) return;
+    //if ((data[1]&0x0010)!=1) return;
 
     // minute (bit 21 .. 27) / bit 28 parity
-    minute = (data[1]>>5)&0x007F;
-    if (((data[1]&0x1000)?1:0)!=getparity(minute)) return;
-    minute = bcd2bin(minute);
-    if (minute>59) return;
+    bcd = (data[1]>>5)&0x007F;
+    //if (((data[1]&0x1000)?1:0)!=getparity(minute)) return;
+    dcf77_time.minute = bcd2bin(bcd);
+    //if (minute>59) return;
 
     // hour (bit 29 .. 34) / bit 35 parity
-    hour = (data[1]>>13)|((data[2]&0x0007)<<3);
-    if (((data[2]&0x0008)?1:0)!=getparity(hour)) return;
-    hour = bcd2bin(hour);
-    if (hour>23) return;
+    bcd = (data[1]>>13)|((data[2]&0x0007)<<3);
+    //if (((data[2]&0x0008)?1:0)!=getparity(hour)) return;
+    dcf77_time.hour = bcd2bin(bcd);
+    //if (hour>23) return;
 
     // day of week (bit 42 .. 44)
-    day = (data[2]>>10)&0x07;
-    day = bcd2bin(day);
-    if (day==0) return;
+    bcd = (data[2]>>10)&0x07;
+    dcf77_time.dayow = bcd2bin(bcd);
+    //if (day==0) return;
+
+    dcf77_time.second = 0;
 
     // use decoded value here
+    rtc_set_time(&dcf77_time);
 }
 
 // function memorize one minute symbols
