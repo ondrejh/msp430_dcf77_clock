@@ -8,8 +8,9 @@ Done:
     - RTC clock counting time (using 32kHz quartz)
     - 16x2 LCD (4bit connection)
     - add some buttons
+    - DCF77 receiver connected
 
 Todo:
 
-    - connect DCF77 receiver and decode it
+    - tune DCF77 sampling (HOLD_OVER is now useless, becouse of low freqv. stability)
     - add some outputs
