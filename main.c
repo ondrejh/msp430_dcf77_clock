@@ -67,8 +67,10 @@
 void board_init(void)
 {
 	// oscillator
-	BCSCTL1 = CALBC1_1MHZ;		// Set DCO
-	DCOCTL = CALDCO_1MHZ;
+	/*BCSCTL1 = CALBC1_1MHZ;		// Set DCO
+	DCOCTL = CALDCO_1MHZ;*/
+	BCSCTL1 = CALBC1_8MHZ;		// Set DCO
+	DCOCTL = CALDCO_8MHZ;
 	/*BCSCTL1 = CALBC1_16MHZ;		// Set DCO
 	DCOCTL = CALDCO_16MHZ;*/
 
@@ -154,7 +156,7 @@ int main(void)
 
     lcm_clearscr();
     lcm_goto(0,0);
-    lcm_prints("B  DCF");
+    lcm_prints("DCF");
 
 	while(1)
 	{
@@ -170,10 +172,10 @@ int main(void)
         uint8_t b=get_button();
         if (b)
         {
-            lcm_goto(0,3);
+            /*lcm_goto(0,3);
             tstr[0]='0'+b;
             tstr[1]='\0';
-            lcm_prints(tstr);
+            lcm_prints(tstr);*/
             if (b==3) // test rtc set function
             {
                 tnow.second = 0;
@@ -183,10 +185,27 @@ int main(void)
                 rtc_set_time(&tnow);
             }
         }
-        lcm_goto(0,6);
-        tstr[0]='0'+last_symbol;
-        tstr[1]='\0';
-        lcm_prints(tstr);
+        // dcf
+        if (symbol_ready)
+        {
+            int ci=0;
+            lcm_goto(0,3);
+            tstr[ci++]=h2c(tunestatus);
+            tstr[ci++]=' ';
+            tstr[ci++]=h2c(last_symbol);
+            tstr[ci++]=' ';
+            tstr[ci++]=h2c((int)last_Q/100%10);
+            tstr[ci++]=h2c((int)last_Q/10%10);
+            tstr[ci++]=h2c((int)last_Q%10);
+            tstr[ci++]=' ';
+            tstr[ci++]=h2c((int)(finetune>>12));
+            tstr[ci++]=h2c((int)(finetune>>8)&0x0F);
+            tstr[ci++]=h2c((int)(finetune>>4)&0x0F);
+            tstr[ci++]=h2c((int)(finetune&0x0F));
+            tstr[ci++]='\0';
+            lcm_prints(tstr);
+            symbol_ready = false;
+        }
 	}
 
 	return -1;

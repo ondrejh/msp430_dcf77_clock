@@ -18,8 +18,6 @@
 
 /// include section
 #include <msp430g2553.h>
-#include <inttypes.h>
-#include <stdbool.h>
 #include <string.h>
 #include "rtc.h"
 #include "dcf77.h" // self
@@ -30,7 +28,8 @@
 // input reading (result true if input pulled down)
 #define DCF77_INPUT() (((P1IN&BIT7)==0)?true:false)
 // timer interval
-#define DCF77_STROBE_TIMER_INTERVAL 125 // 1kHz (1MHz/8 input clock)
+//#define DCF77_STROBE_TIMER_INTERVAL 125 // 1kHz (1MHz/8 input clock)
+#define DCF77_STROBE_TIMER_INTERVAL (125*8-1) // 1kHz (8MHz/8 input clock)
 
 #define DCF77_LED 1
 #if DCF77_LED
@@ -52,10 +51,11 @@
 // fine synchronization offset (in dcf77 timer ticks)
 #define DCF77_FINESYNC_OFFSET 10
 // minimul quality of signal (out of 1000)
-#define DCF77_MIN_SIGNAL_QUALITY 800
+#define DCF77_MIN_SIGNAL_QUALITY 900
 // hold over and fine synchronization timing
-#define DCF77_MAX_HOLD_SYMBOLS 300
-#define DCF77_FINETUNE_SYMCOUNT 60
+#define DCF77_MAX_HOLD_SYMBOLS 10
+#define DCF77_FINETUNE_SYMCOUNT 1
+#define DCF77_FINETUNE_SHIFT 5
 
 // dcf strobe variables
 typedef enum {DCF77SYNC_COARSE,DCF77SYNC_FINE,DCF77SYNC_HOLD} dcf77_sync_mode_type;
@@ -73,7 +73,7 @@ typedef struct {
     int s0cnt,s1cnt,sMcnt; // symbol counters (very internal)
 } dcf77_detector_context;
 
-dcf77_symbol_type last_last_symbol = DCF77_SYMBOL_NONE;
+bool leave_interrupt;
 
 // function finding index and value of the biggest value from three values
 // it is used in symbol matching (dcf77_detect) and fine synchronization (dcf77_strobe)
@@ -242,7 +242,7 @@ void dcf77_detect(dcf77_detector_context *detector, bool signal)
         // save overall signal quality value (symbol and pause)
         detector->sigQ = detector->sigQcnt+symQ;
         // decode symbol
-        if (detector->sigQ>=DCF77_MIN_SIGNAL_QUALITY)
+        if (detector->sigQ >= DCF77_MIN_SIGNAL_QUALITY)
             detector->sym=symI+1;
         else
             detector->sym=DCF77_SYMBOL_NONE;
@@ -253,9 +253,6 @@ void dcf77_detect(dcf77_detector_context *detector, bool signal)
             case 2: detector->sym=DCF77_SYMBOL_MINUTE; break;
             default: detector->sym=DCF77_SYMBOL_NONE; break;
         }*/
-
-        // debug output on lcd
-        last_symbol = detector->sym;
 
         // rise it's ready flag
         detector->ready=true;
@@ -304,6 +301,14 @@ void dcf77_strobe(void)
     // detection and decoding
     for (i=0;i<3;i++) dcf77_detect(&detector[i],dcf77sig); // detection
     //if (detector[1].ready==true) dcf77_decode(detector[1].sym);
+    if (detector[1].ready == true)
+    {
+        last_symbol = detector[1].sym;
+        finetune = FineTune;
+        last_Q = detector[1].sigQ;
+        symbol_ready = true;
+        leave_interrupt = true;
+    }
 
     // fine synchronization
     if (dcf77_sync_mode==DCF77SYNC_FINE)
@@ -326,9 +331,9 @@ void dcf77_strobe(void)
                 if (FineTune<-DCF77_FINETUNE_SYMCOUNT)
                 {
                     FineTune=0;
-                    detector[0].cnt++;
-                    detector[1].cnt++;
-                    detector[2].cnt++;
+                    detector[0].cnt+=DCF77_FINETUNE_SHIFT;
+                    detector[1].cnt+=DCF77_FINETUNE_SHIFT;
+                    detector[2].cnt+=DCF77_FINETUNE_SHIFT;
                 }
             }
             if (b==2)
@@ -337,9 +342,9 @@ void dcf77_strobe(void)
                 if (FineTune>DCF77_FINETUNE_SYMCOUNT)
                 {
                     FineTune=0;
-                    detector[0].cnt--;
-                    detector[1].cnt--;
-                    detector[2].cnt--;
+                    detector[0].cnt-=DCF77_FINETUNE_SHIFT;
+                    detector[1].cnt-=DCF77_FINETUNE_SHIFT;
+                    detector[2].cnt-=DCF77_FINETUNE_SHIFT;
                 }
             }
         }
@@ -351,7 +356,7 @@ void dcf77_strobe(void)
         if (detector[1].ready==true)
         {
             DCF77_LED_SWAP();
-            if (detector[1].sigQ!=DCF77_SYMBOL_NONE)
+            if (detector[1].sym!=DCF77_SYMBOL_NONE)
             {
                 if (detector[1].sym!=DCF77_SYMBOL_MINUTE)
                 {
@@ -373,6 +378,8 @@ void dcf77_strobe(void)
 
     // save last input (for coarse sync.)
     last_dcf77sig = dcf77sig;
+
+    tunestatus=dcf77_sync_mode;
 }
 
 /// module initialization function
@@ -397,9 +404,9 @@ __interrupt void Timer1 (void)
 
     dcf77_strobe();
 
-    if (last_symbol!=last_last_symbol)
+    if (leave_interrupt)
     {
-        last_last_symbol = last_symbol;
+        leave_interrupt=false;
         __bic_SR_register_on_exit(CPUOFF); // Clear CPUOFF bit from 0(SR)
     }
 }
