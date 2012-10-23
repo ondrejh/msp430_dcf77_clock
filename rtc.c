@@ -88,7 +88,7 @@ void rtc_timer_init(void)
 
 	CCTL0 = CCIE; // CCR0 interrupt enabled
 	#ifdef RTC_SAMPLING_FREQV
-	CCR0 = (32768/8/RTC_SAMPLING_FREQV);
+	CCR0 = (32768/8/RTC_SAMPLING_FREQV)-1;
 	#else
 	//CCR0 = 512;	  // f = 32768 / 8(ID_3) / 512(CCR0) = 8Hz
 	CCR0 = 1024;	  // f = 32768 / 8(ID_3) / 1024(CCR0) = 4Hz
@@ -123,7 +123,11 @@ __interrupt void Timer_A (void)
             inc_one_second(&tbuff[tptr],&tbuff[nextptr]);
             tptr=nextptr;
         }
-        else RTC_LED_OFF();
+        else
+        {
+            if (tdiv==(RTC_SAMPLING_FREQV/4))
+                RTC_LED_OFF();
+        }
     }
     else
     {
