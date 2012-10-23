@@ -103,7 +103,25 @@ uint8_t getparity(uint8_t dat)
     while (d!=0)
     {
         p^=d;
-        d>>1;
+        d>>=1;
+    }
+    return p&0x01;
+}
+
+uint8_t getlongparity(uint16_t dat0, uint16_t dat1)
+{
+    uint8_t p=0;
+    uint16_t d=dat0;
+    while(d!=0)
+    {
+        p^=d&0x01;
+        d>>=1;
+    }
+    d=dat1;
+    while(d!=0)
+    {
+        p^=d&0x01;
+        d>>=1;
     }
     return p&0x01;
 }
@@ -116,37 +134,30 @@ void dcf77_decode(uint16_t *data,uint16_t *valid)
     uint8_t bcd;
 
     // (first time) decode only when all data valid
-    for (i=0;i<4;i++) if (valid[i]!=0)
-    {
-        dcf77_time.second=56;
-        dcf77_time.minute=34;
-        dcf77_time.hour=12;
-        dcf77_time.dayow=6;
-        rtc_set_time(&dcf77_time);
-        return;
-    }
+    for (i=0;i<4;i++) if (valid[i]!=0) return;
 
     // test M = 0 (bit 0)
-    //if ((data[0]&0x0001)!=0) return;
+    if ((data[0]&0x0001)!=0) return;
     // test S = 1 (bit 20)
-    //if ((data[1]&0x0010)!=1) return;
+    if ((data[1]&0x0010)==0) return;
 
     // minute (bit 21 .. 27) / bit 28 parity
     bcd = (data[1]>>5)&0x007F;
-    //if (((data[1]&0x1000)?1:0)!=getparity(minute)) return;
+    if (((data[1]&0x1000)?1:0)!=getparity(dcf77_time.minute)) return;
     dcf77_time.minute = bcd2bin(bcd);
-    //if (minute>59) return;
+    if (dcf77_time.minute>59) return;
 
     // hour (bit 29 .. 34) / bit 35 parity
     bcd = (data[1]>>13)|((data[2]&0x0007)<<3);
-    //if (((data[2]&0x0008)?1:0)!=getparity(hour)) return;
+    if (((data[2]&0x0008)?1:0)!=getparity(dcf77_time.hour)) return;
     dcf77_time.hour = bcd2bin(bcd);
-    //if (hour>23) return;
+    if (dcf77_time.hour>23) return;
 
     // day of week (bit 42 .. 44)
     bcd = (data[2]>>10)&0x07;
-    dcf77_time.dayow = bcd2bin(bcd);
-    //if (day==0) return;
+    if (((data[3]&0x0400)?1:0)!=getlongparity((data[2]&0xFFF0)>>4,data[3]&0x03FF)) return;
+    dcf77_time.dayow = bcd2bin(bcd)-1;
+    if (dcf77_time.dayow==7) return;
 
     dcf77_time.second = 0;
 
@@ -306,6 +317,7 @@ void dcf77_strobe(void)
     //if (detector[1].ready==true) dcf77_decode(detector[1].sym);
     if (detector[1].ready == true)
     {
+        dcf77_symbol_memory(detector[1].sym);
         last_symbol = detector[1].sym;
         finetune = FineTune;
         last_Q = detector[1].sigQ;

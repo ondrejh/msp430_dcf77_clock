@@ -165,7 +165,7 @@ int main(void)
         rtc_get_time(&tnow);
         char tstr[16];
         sprint_time(&tnow,tstr);
-        lcm_goto(1,3);
+        lcm_goto(1,0);
         lcm_prints(tstr);
         str_add_lineend(tstr,16);
         uart_puts(tstr);
