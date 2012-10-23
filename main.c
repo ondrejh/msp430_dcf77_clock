@@ -40,6 +40,11 @@
 //            |            P2.4 |---->| EN |       |---
 //            |            P2.5 |---->| RS |       |   |
 //            |                 |      ------------   ---
+//            |                 |                              \|/
+//            |                 |         -------               |
+//            |            P1.7 |<-------| DCF77 |--------------
+//            |                 |         -------
+//            |                 |
 //
 //******************************************************************************
 
@@ -154,9 +159,11 @@ int main(void)
 	buttons_init(); // buttons
 	dcf77_init(); // dcf77 receiver
 
+    #if DCF77_DEBUG
     lcm_clearscr();
     lcm_goto(0,0);
     lcm_prints("DCF");
+    #endif
 
 	while(1)
 	{
@@ -185,6 +192,7 @@ int main(void)
                 rtc_set_time(&tnow);
             }
         }
+        #if DCF77_DEBUG
         // dcf
         if (symbol_ready)
         {
@@ -206,6 +214,7 @@ int main(void)
             lcm_prints(tstr);
             symbol_ready = false;
         }
+        #endif
 	}
 
 	return -1;

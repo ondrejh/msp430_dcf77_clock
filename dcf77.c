@@ -27,11 +27,8 @@
 #define DCF77_INPUT_INIT() {P1DIR&=~BIT7;P1OUT|=BIT7;}
 // input reading (result true if input pulled down)
 #define DCF77_INPUT() (((P1IN&BIT7)==0)?true:false)
-// timer interval
-//#define DCF77_STROBE_TIMER_INTERVAL 125 // 1kHz (1MHz/8 input clock)
-#define DCF77_STROBE_TIMER_INTERVAL (125*8-1) // 1kHz (8MHz/8 input clock)
 
-#define DCF77_LED 1
+#define DCF77_LED 0
 #if DCF77_LED
     #define DCF77_LED_INIT() {P1DIR|=0x01;P1OUT&=~0x01;}
     #define DCF77_LED_ON() {P1OUT|=0x01;}
@@ -76,8 +73,6 @@ typedef struct {
     int s0cnt,s1cnt,sMcnt; // symbol counters (very internal)
 } dcf77_detector_context;
 
-bool leave_interrupt;
-
 // function finding index and value of the biggest value from three values
 // it is used in symbol matching (dcf77_detect) and fine synchronization (dcf77_strobe)
 int find_biggest(int val0, int val1, int val2, int *val)
@@ -96,6 +91,7 @@ uint8_t bcd2bin(uint8_t bcd)
     return ((bcd&0x0F)+(10*(bcd>>4)));
 }
 
+#if DCF77_TEST_PARITY
 // function counting short dcf77 parity
 uint8_t getparity(uint8_t dat)
 {
@@ -125,6 +121,7 @@ uint8_t getlongparity(uint16_t dat0, uint16_t dat1)
     }
     return p&0x01;
 }
+#endif
 
 // function decode dcf data
 void dcf77_decode(uint16_t *data,uint16_t *valid)
@@ -136,33 +133,47 @@ void dcf77_decode(uint16_t *data,uint16_t *valid)
     // (first time) decode only when all data valid
     for (i=0;i<4;i++) if (valid[i]!=0) return;
 
+    #if DCF77_TEST_PARITY
     // test M = 0 (bit 0)
     if ((data[0]&0x0001)!=0) return;
     // test S = 1 (bit 20)
     if ((data[1]&0x0010)==0) return;
+    #endif
 
     // minute (bit 21 .. 27) / bit 28 parity
     bcd = (data[1]>>5)&0x007F;
+    #if DCF77_TEST_PARITY
     if (((data[1]&0x1000)?1:0)!=getparity(dcf77_time.minute)) return;
+    #endif
     dcf77_time.minute = bcd2bin(bcd);
+    #if DCF77_TEST_PARITY
     if (dcf77_time.minute>59) return;
+    #endif
 
     // hour (bit 29 .. 34) / bit 35 parity
     bcd = (data[1]>>13)|((data[2]&0x0007)<<3);
+    #if DCF77_TEST_PARITY
     if (((data[2]&0x0008)?1:0)!=getparity(dcf77_time.hour)) return;
+    #endif
     dcf77_time.hour = bcd2bin(bcd);
+    #if DCF77_TEST_PARITY
     if (dcf77_time.hour>23) return;
+    #endif
 
     // day of week (bit 42 .. 44)
     bcd = (data[2]>>10)&0x07;
+    #if DCF77_TEST_PARITY
     if (((data[3]&0x0400)?1:0)!=getlongparity((data[2]&0xFFF0)>>4,data[3]&0x03FF)) return;
+    #endif
     dcf77_time.dayow = bcd2bin(bcd)-1;
+    #if DCF77_TEST_PARITY
     if (dcf77_time.dayow==7) return;
+    #endif
 
     dcf77_time.second = 0;
 
     // use decoded value here
-    rtc_set_time(&dcf77_time);
+    rtc_set_time(&dcf77_time); // RTC is synchronized HERE !!!
 }
 
 // function memorize one minute symbols
@@ -318,11 +329,12 @@ void dcf77_strobe(void)
     if (detector[1].ready == true)
     {
         dcf77_symbol_memory(detector[1].sym);
+        #if DCF77_DEBUG
         last_symbol = detector[1].sym;
         finetune = FineTune;
         last_Q = detector[1].sigQ;
         symbol_ready = true;
-        leave_interrupt = true;
+        #endif
     }
 
     // fine synchronization
@@ -394,7 +406,9 @@ void dcf77_strobe(void)
     // save last input (for coarse sync.)
     last_dcf77sig = dcf77sig;
 
+    #if DCF77_DEBUG
     tunestatus=dcf77_sync_mode;
+    #endif
 }
 
 /// module initialization function
