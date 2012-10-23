@@ -17,5 +17,6 @@ int tunestatus;
 int finetune;
 
 void dcf77_init(void);
+void dcf77_strobe(void);
 
 #endif

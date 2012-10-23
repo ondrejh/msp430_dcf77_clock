@@ -10,6 +10,7 @@
 #include <msp430g2553.h>
 #include <stdbool.h>
 #include <string.h>
+#include "dcf77.h"
 #include "rtc.h"
 
 // switch on (1) and off (0) debug blinking
@@ -139,4 +140,6 @@ __interrupt void Timer_A (void)
 
         treset=false; // clear sync. flag
     }
+
+    dcf77_strobe();
 }

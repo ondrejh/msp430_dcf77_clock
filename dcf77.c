@@ -45,17 +45,20 @@
 #endif
 
 // symbol detection timing
-#define DCF77_DETECT_PERIOD (int)1000
+/*#define DCF77_DETECT_PERIOD (int)1000
 #define DCF77_S0_PERIOD (int)100
-#define DCF77_S1_PERIOD (int)200
+#define DCF77_S1_PERIOD (int)200*/
+#define DCF77_DETECT_PERIOD RTC_SAMPLING_FREQV
+#define DCF77_S0_PERIOD (RTC_SAMPLING_FREQV/10)
+#define DCF77_S1_PERIOD (RTC_SAMPLING_FREQV/5)
 // fine synchronization offset (in dcf77 timer ticks)
-#define DCF77_FINESYNC_OFFSET 10
+#define DCF77_FINESYNC_OFFSET 3
 // minimul quality of signal (out of 1000)
-#define DCF77_MIN_SIGNAL_QUALITY 900
+#define DCF77_MIN_SIGNAL_QUALITY (RTC_SAMPLING_FREQV/10*9)
 // hold over and fine synchronization timing
-#define DCF77_MAX_HOLD_SYMBOLS 10
-#define DCF77_FINETUNE_SYMCOUNT 1
-#define DCF77_FINETUNE_SHIFT 5
+#define DCF77_MAX_HOLD_SYMBOLS 300 // 5minutes
+#define DCF77_FINETUNE_SYMCOUNT 10
+#define DCF77_FINETUNE_SHIFT 1
 
 // dcf strobe variables
 typedef enum {DCF77SYNC_COARSE,DCF77SYNC_FINE,DCF77SYNC_HOLD} dcf77_sync_mode_type;
@@ -383,30 +386,10 @@ void dcf77_strobe(void)
 }
 
 /// module initialization function
-// timer and input init
+// input (only) init
 void dcf77_init(void)
 {
     // input init
     DCF77_INPUT_INIT();
     DCF77_LED_INIT(); // debug led (en/dis by DCF77_LED macro value)
-
-    // timer init
-	TA1CCTL0 = CCIE;				// CCR0 interrupt enabled
-	TA1CCR0 = DCF77_STROBE_TIMER_INTERVAL;
-	TA1CTL = TASSEL_2 + MC_2 + ID_3;	// SMCLK, contmode, fosc/8
-}
-
-// Timer A1 interrupt service routine
-#pragma vector=TIMER1_A0_VECTOR
-__interrupt void Timer1 (void)
-{
-    TA1CCR0 += DCF77_STROBE_TIMER_INTERVAL;	// Add Offset to CCR0
-
-    dcf77_strobe();
-
-    if (leave_interrupt)
-    {
-        leave_interrupt=false;
-        __bic_SR_register_on_exit(CPUOFF); // Clear CPUOFF bit from 0(SR)
-    }
 }
