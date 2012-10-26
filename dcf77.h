@@ -11,8 +11,8 @@
 #include <stdbool.h>
 
 // code size and performace controll
-#define DCF77_TEST_PARITY 1 // set 1 to test parities and static bits in dcf77 code
-#define DCF77_DEBUG 0 // set 1 to output some debug variables
+#define DCF77_TEST_PARITY 0 // set 1 to test parities and static bits in dcf77 code
+#define DCF77_DEBUG 1 // set 1 to output some debug variables
 
 #if DCF77_DEBUG
 // debug variables

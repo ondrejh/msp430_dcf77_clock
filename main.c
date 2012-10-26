@@ -29,7 +29,7 @@
 //            |                 |
 //            |             P1.3|----> BTN1 --
 //            |             P1.4|----> BTN2 --|--
-//            |             P1.5|----> BTN3 --   |
+//            |             P1.7|----> BTN3 --   |
 //            |                 |               ---
 //            |                 |
 //            |                 |      -----------    +5V
@@ -42,7 +42,7 @@
 //            |                 |      ------------   ---
 //            |                 |                              \|/
 //            |                 |         -------               |
-//            |            P1.7 |<-------| DCF77 |--------------
+//            |            P1.5 |<-------| DCF77 |--------------
 //            |                 |         -------
 //            |                 |
 //
@@ -156,7 +156,7 @@ int main(void)
 	lcm_init(); // lcd
 	rtc_timer_init(); // init 32kHz timer
 	uart_init(); // init uart (communication)
-	buttons_init(); // buttons
+	//buttons_init(); // buttons
 	dcf77_init(); // dcf77 receiver
 
     #if DCF77_DEBUG

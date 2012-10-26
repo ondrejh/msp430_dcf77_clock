@@ -24,9 +24,9 @@
 
 // input init (pull up resistor)
 //#define DCF77_INPUT_INIT() {P1DIR&=~BIT7;P1OUT|=BIT7;P1REN|=BIT7;}
-#define DCF77_INPUT_INIT() {P1DIR&=~BIT7;P1OUT|=BIT7;}
+#define DCF77_INPUT_INIT() {P1DIR&=~BIT5;P1OUT|=BIT5;}
 // input reading (result true if input pulled down)
-#define DCF77_INPUT() (((P1IN&BIT7)==0)?true:false)
+#define DCF77_INPUT() (((P1IN&BIT5)==0)?true:false)
 
 #define DCF77_LED 0
 #if DCF77_LED
@@ -383,15 +383,7 @@ void dcf77_strobe(void)
         if (detector[1].ready==true)
         {
             DCF77_LED_SWAP();
-            if (detector[1].sym!=DCF77_SYMBOL_NONE)
-            {
-                if (detector[1].sym!=DCF77_SYMBOL_MINUTE)
-                {
-                    dcf77_sync_mode=DCF77SYNC_FINE;
-                    DCF77_LED_ON();
-                }
-            }
-            else
+            if ((detector[1].sym==DCF77_SYMBOL_NONE)||(detector[1].sym==DCF77_SYMBOL_MINUTE))
             {
                 hold_counter++;
                 if (hold_counter>DCF77_MAX_HOLD_SYMBOLS)
@@ -399,6 +391,12 @@ void dcf77_strobe(void)
                     dcf77_sync_mode=DCF77SYNC_COARSE;
                     DCF77_LED_OFF();
                 }
+            }
+            else
+            {
+                // symbol found (0 or 1) - back to fine sync.
+                dcf77_sync_mode=DCF77SYNC_FINE;
+                DCF77_LED_ON();
             }
         }
     }
