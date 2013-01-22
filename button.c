@@ -17,7 +17,7 @@
 // buttons connected (port1)
 #define BTN1 BIT3
 #define BTN2 BIT4
-#define BTN3 BIT5
+#define BTN3 BIT7
 
 // last pressed button buffer
 uint8_t btn = 0;
