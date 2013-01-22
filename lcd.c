@@ -252,6 +252,7 @@ void lcm_init(void)
     //
     LCM_DIR |= LCM_PIN_MASK;
     LCM_OUT &= ~(LCM_PIN_MASK);
+    LCM_OUT |= LCM_PIN_EN;
     //
     // wait for the LCM to warm up and reach
     // active regions. Remember MSPs can power
