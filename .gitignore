@@ -1,8 +1,8 @@
-*.elf
-*.map
-*.hex
-*.txt
 *.d
 *.o
-dcf77clock.layout
 *.cbTemp
+*.layout
+*.elf
+*.hex
+*.map
+msp430sht.txt
