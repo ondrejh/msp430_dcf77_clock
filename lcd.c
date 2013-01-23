@@ -37,15 +37,15 @@
 
 #define LCM_PIN_MASK ((LCM_PIN_RS | LCM_PIN_EN | LCM_PIN_D7 | LCM_PIN_D6 | LCM_PIN_D5 | LCM_PIN_D4))
 
-/*#define FALSE 0
-#define TRUE 1*/
 #define LCM_SEND_COMMAND 0
 #define LCM_SEND_DATA 1
 
-/*#define LCM_PULSE_DELAY 200
-#define LCM_INIT_DELAY 100000*/
-#define LCM_PULSE_DELAY 1600
-#define LCM_INIT_DELAY 800000
+//#define LCM_PULSE_DELAY 10
+//#define LCM_INIT_DELAY 100000      // pause in the initialisation phase
+//#define LCM_STARTUP_DELAY 50000    // pause after initialization (display is cleared already)
+#define LCM_PULSE_DELAY 80
+#define LCM_INIT_DELAY 800000      // pause in the initialisation phase
+#define LCM_STARTUP_DELAY 400000   // pause after initialization (display is cleared already)
 
 #define LCM_CURSOR_ON 0x02
 #define LCM_CURSOR_BLINK 0x01
@@ -252,7 +252,7 @@ void lcm_init(void)
     //
     LCM_DIR |= LCM_PIN_MASK;
     LCM_OUT &= ~(LCM_PIN_MASK);
-    LCM_OUT |= LCM_PIN_EN;
+    PulseLcm();
     //
     // wait for the LCM to warm up and reach
     // active regions. Remember MSPs can power
@@ -264,13 +264,9 @@ void lcm_init(void)
     // initialize the LCM module
     //
     // 1. Set 4-bit input
-    //
-    LCM_OUT &= ~LCM_PIN_RS;
-    LCM_OUT &= ~LCM_PIN_EN;
-
-    //LCM_OUT = 0x20;
-    LCM_OUT = LCM_PIN_D5;
+    LCM_OUT |= LCM_PIN_D5;
     PulseLcm();
+    __delay_cycles(LCM_INIT_DELAY);
 
     //
     // set 4-bit input - second time.
@@ -281,12 +277,16 @@ void lcm_init(void)
     //
     // 2. Display on, cursor off, blink off
     //
-    SendByte(0x0C/*|LCM_CURSOR_ON|LCM_CURSOR_BLINK*/, LCM_SEND_COMMAND);
+    SendByte(0x0C, LCM_SEND_COMMAND);
 
     //
     // 3. Cursor move auto-increment
     //
     SendByte(0x06, LCM_SEND_COMMAND);
+
+    // clear display and wait
+    lcm_clearscr();
+    __delay_cycles(LCM_STARTUP_DELAY);
 }
 
 //

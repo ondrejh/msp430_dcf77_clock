@@ -159,8 +159,8 @@ int main(void)
 	//buttons_init(); // buttons
 	dcf77_init(); // dcf77 receiver
 
+
     #if DCF77_DEBUG
-    lcm_clearscr();
     lcm_goto(0,0);
     lcm_prints("DCF");
     #endif
