@@ -72,11 +72,11 @@
 void board_init(void)
 {
 	// oscillator
-	/*BCSCTL1 = CALBC1_1MHZ;		// Set DCO
-	DCOCTL = CALDCO_1MHZ;*/
-	BCSCTL1 = CALBC1_8MHZ;		// Set DCO
+	BCSCTL1 = CALBC1_1MHZ;		// Set DCO
+	DCOCTL = CALDCO_1MHZ;
+	/*BCSCTL1 = CALBC1_8MHZ;		// Set DCO
 	DCOCTL = CALDCO_8MHZ;
-	/*BCSCTL1 = CALBC1_16MHZ;		// Set DCO
+	BCSCTL1 = CALBC1_16MHZ;		// Set DCO
 	DCOCTL = CALDCO_16MHZ;*/
 
 	LED_INIT(); // leds

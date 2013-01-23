@@ -40,12 +40,14 @@
 #define LCM_SEND_COMMAND 0
 #define LCM_SEND_DATA 1
 
-//#define LCM_PULSE_DELAY 10
-//#define LCM_INIT_DELAY 100000      // pause in the initialisation phase
-//#define LCM_STARTUP_DELAY 50000    // pause after initialization (display is cleared already)
-#define LCM_PULSE_DELAY 80
-#define LCM_INIT_DELAY 800000      // pause in the initialisation phase
-#define LCM_STARTUP_DELAY 400000   // pause after initialization (display is cleared already)
+// 1MHz setup
+#define LCM_PULSE_DELAY 10
+#define LCM_INIT_DELAY 100000      // pause in the initialisation phase
+#define LCM_STARTUP_DELAY 50000    // pause after initialization (display is cleared already)
+// 8MHz setup
+//#define LCM_PULSE_DELAY 80
+//#define LCM_INIT_DELAY 800000      // pause in the initialisation phase
+//#define LCM_STARTUP_DELAY 400000   // pause after initialization (display is cleared already)
 
 #define LCM_CURSOR_ON 0x02
 #define LCM_CURSOR_BLINK 0x01
